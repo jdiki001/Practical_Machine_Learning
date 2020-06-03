@@ -1,0 +1,77 @@
+---
+title: "Prediction Assignment Writeup"
+author: "Donovan Dikitanan"
+date: "6/3/2020"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Loading the Data
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+```{r}
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", 
+              dest = "pml-training.csv", mode = "wb")
+download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv", 
+              dest = "pml-testing.csv", mode = "wb")
+trainingSet <- read.csv("pml-training.csv")
+testSet <- read.csv("pml-testing.csv")
+```
+
+## Data Processing
+
+```{r}
+summary(trainingSet)
+characteristics <- names(testSet[ , colSums(is.na(testSet)) == 0])[8:59]
+trainingSet <- trainingSet[ , c(characteristics, "classe")]
+testSet <- testSet[ , c(characteristics, "problem_id")]
+dim(trainingSet)
+dim(testSet)
+```
+
+## Data Partitioning
+
+The "caret" and "randomForest" libraries are utilized for data partitioning, training, and predicting.
+
+```{r}
+library(caret)
+library(randomForest)
+Training <- createDataPartition(y = trainingSet$classe, p = 0.7, list = FALSE)
+trainNew <- trainingSet[Training, ]
+testNew <- trainingSet[-Training, ]
+dim(trainNew) # Check new dimensions
+dim(testNew)  # Check new dimensions
+```
+
+### Model Fitting
+
+```{r}
+modelFitting <- randomForest(classe~., data = trainNew)
+modelFitting
+```
+
+### Confusion Matrix
+
+```{r}
+confusionMatrix(testNew$classe, predict(modelFitting, testNew))
+```
+
+### Prediction
+
+```{r}
+predict(modelFitting, testSet)
+```
